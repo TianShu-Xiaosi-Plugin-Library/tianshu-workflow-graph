@@ -29,6 +29,7 @@ async function main() {
 
   const t0 = performance.now()
   const result = await execute(graph, {
+    graphPath,
     workDir: flag('--workdir') ?? resolve(HERE, '.twg-run', graph.id ?? 'run'),
     ffmpeg: flag('--ffmpeg'),
   })

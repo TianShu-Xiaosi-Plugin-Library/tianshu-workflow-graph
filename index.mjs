@@ -103,6 +103,7 @@ export default defineTianshuPlugin({
                 ledger: getLedger(),
                 services: buildServices(),
                 cwd,
+                graphPath,
               })
             } catch (err) {
               return { isError: true, content: `执行失败: ${err.message}` }

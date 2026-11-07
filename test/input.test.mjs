@@ -21,17 +21,17 @@ test('ffmpeg.input: 缺 path 直接报错', () => {
   rmSync(d, { recursive: true, force: true })
 })
 
-test('ffmpeg.input: 工作区外的绝对路径被拒', () => {
+test('ffmpeg.input: 基准目录外的绝对路径被拒', () => {
   const d = work()
   // 用系统目录里的真实文件，确保不是"文件不存在"导致的失败
   const outside = process.platform === 'win32' ? 'C:/Windows/System32/drivers/etc/hosts' : '/etc/hosts'
-  assert.throws(() => run({ path: outside }, d, d), /素材在工作区外，拒绝读取/)
+  assert.throws(() => run({ path: outside }, d, d), /素材在基准目录外，拒绝读取/)
   rmSync(d, { recursive: true, force: true })
 })
 
 test('ffmpeg.input: ../ 相对逃逸被拒', () => {
   const d = work()
-  assert.throws(() => run({ path: '../outside.mp4' }, d, d), /素材在工作区外，拒绝读取/)
+  assert.throws(() => run({ path: '../outside.mp4' }, d, d), /素材在基准目录外，拒绝读取/)
   rmSync(d, { recursive: true, force: true })
 })
 
@@ -54,7 +54,7 @@ test('ffmpeg.input: 存在的工作区内文件能通过守卫（不因路径被
     err = e
   }
   assert.ok(err, '空文件应让 ffmpeg 失败')
-  assert.doesNotMatch(String(err.message), /工作区外|素材不存在/, '守卫不应误拦工作区内存在的文件')
+  assert.doesNotMatch(String(err.message), /基准目录外|素材不存在/, '守卫不应误拦工作区内存在的文件')
   rmSync(d, { recursive: true, force: true })
 })
 
@@ -80,7 +80,7 @@ test('ffmpeg.input: 工作区内的符号链接指向外部时被拒', (t) => {
   }
   assert.throws(
     () => run({ path: 'link.mp4' }, d, d),
-    /经符号链接指向工作区外/,
+    /经符号链接指向基准目录外/,
   )
   rmSync(d, { recursive: true, force: true })
   rmSync(outsideDir, { recursive: true, force: true })
@@ -97,7 +97,7 @@ test('ffmpeg.input: 工作区内的普通文件不被符号链接检查误拦', 
   }
   assert.ok(err, '空文件应让 ffmpeg 失败')
   assert.doesNotMatch(String(err.message),
-    /工作区外|素材不存在|符号链接|无法解析/,
+    /基准目录外|素材不存在|符号链接|无法解析/,
     '守卫不应误拦工作区内的普通文件')
   rmSync(d, { recursive: true, force: true })
 })

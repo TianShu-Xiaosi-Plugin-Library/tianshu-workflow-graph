@@ -38,6 +38,7 @@ description: 用 TWG 把视频/内容生产流程写成可执行、可查证的�
 ```
 
 规则：
+- `root` 声明 `params.path` 相对谁：`"workspace"`（默认，相对会话工作区）或 `"graph"`（相对图文件所在目录）。**分享图给别人时必须写 `"graph"`**，否则对方的工作区不同，路径会解析到别处
 - `id` 节点唯一，`inputs` 声明依赖（引擎做拓扑排序 + 环检测）
 - `type` 必须与 `op` 的类型一致，否则报错
 - `outputs` 是产物的命名出口，指向节点 id
@@ -47,7 +48,7 @@ description: 用 TWG 把视频/内容生产流程写成可执行、可查证的�
 | op | type | 要什么输入 | 关键 params | 确定性 |
 |---|---|---|---|---|
 | `ffmpeg.testsrc` | compute | 无 | `duration` `size` `rate` | deterministic |
-| `ffmpeg.input` | compute | 无 | `path`（**必须在工作区内**）`start` `duration` | deterministic |
+| `ffmpeg.input` | compute | 无 | `path`（**必须在基准目录内**，基准由 `root` 决定）`start` `duration` | deterministic |
 | `ffmpeg.color` | compute | 无 | `duration` `size` `rate` `color` | deterministic |
 | `ffmpeg.concat` | render | 1+ 个视频 | 无（按 inputs 顺序拼接） | deterministic |
 | `ffmpeg.drawtext` | render | 1 个视频 | `text` `size` `x` `y` | deterministic |
@@ -74,7 +75,7 @@ description: 用 TWG 把视频/内容生产流程写成可执行、可查证的�
 
 ## 常见组合
 
-**用自己的素材**：`ffmpeg.input`（读工作区内文件）→ `ffmpeg.drawtext` → `verify.media`
+**用自己的素材**：`ffmpeg.input`（读基准目录内文件）→ `ffmpeg.drawtext` → `verify.media`
 **片头**：`ffmpeg.color` → `ffmpeg.drawtext` → `verify.media`
 **多段拼接**：N 个 `ffmpeg.color`/`testsrc` → `ffmpeg.concat` → `verify.media`
 **带判断的流水线**：`ffmpeg.color` → `agent.llm`（判断风格）→ `memory.set`（存结论）+ `ffmpeg.concat`（合成）

@@ -144,6 +144,7 @@ twg_run { graph: "twg/templates/title-card.twg.json" }
 }
 ```
 
+- `root` 声明 `params.path` 的基准：`"workspace"`（默认，相对会话工作区）或 `"graph"`（相对图文件目录）。**分享图时写 `"graph"`**，否则换个工作区就找不到素材
 - `inputs` 声明依赖，引擎做拓扑排序并**检测环**
 - `outputs` 是产物的命名出口
 - 图是纯文本，可 diff、可 review、可进 git
@@ -153,7 +154,7 @@ twg_run { graph: "twg/templates/title-card.twg.json" }
 | 类型 | op | 确定性 | 说明 |
 |---|---|---|---|
 | compute | `ffmpeg.testsrc` / `ffmpeg.color` | deterministic | 生成测试/纯色素材 |
-| compute | `ffmpeg.input` | deterministic | **读工作区内的素材文件**（`path` 相对工作区根） |
+| compute | `ffmpeg.input` | deterministic | **读基准目录内的素材文件**（`path` 的基准由 `root` 决定） |
 | render | `ffmpeg.concat` / `ffmpeg.drawtext` | deterministic | 拼接、加字 |
 | verify | `verify.media` | deterministic | 大小/时长门禁，不达标**中断整图** |
 | agent | `agent.llm` | **stochastic** | 调模型判断（依赖宿主注入 `sidePathLLM`） |
