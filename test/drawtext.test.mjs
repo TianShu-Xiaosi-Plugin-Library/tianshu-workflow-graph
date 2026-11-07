@@ -109,3 +109,55 @@ test('drawtext: 既无 params.text 也只有一个输入时报错', () => {
   )
   rmSync(d, { recursive: true, force: true })
 })
+
+// ── 非 OpenAI 厂商的响应结构 ────────────────────────────
+
+test('pickText: Anthropic 的 content[].text', () => {
+  const body = JSON.stringify({ content: [{ type: 'text', text: 'Anthropic says ripe' }] })
+  assert.equal(pickText(body), 'Anthropic says ripe')
+})
+
+test('pickText: Anthropic 多个 text 块拼接', () => {
+  const body = JSON.stringify({ content: [{ type: 'text', text: 'ripe ' }, { type: 'text', text: 'grapes' }] })
+  assert.equal(pickText(body), 'ripe grapes')
+})
+
+test('pickText: Anthropic 忽略非 text 块', () => {
+  const body = JSON.stringify({ content: [{ type: 'tool_use', id: 'x' }, { type: 'text', text: 'only this' }] })
+  assert.equal(pickText(body), 'only this')
+})
+
+test('pickText: Gemini 的 candidates[0].content.parts[].text', () => {
+  const body = JSON.stringify({ candidates: [{ content: { parts: [{ text: 'Gemini says ripe' }] } }] })
+  assert.equal(pickText(body), 'Gemini says ripe')
+})
+
+test('pickText: Ollama 的顶层 message.content', () => {
+  const body = JSON.stringify({ message: { role: 'assistant', content: 'Ollama says ripe' } })
+  assert.equal(pickText(body), 'Ollama says ripe')
+})
+
+test('pickText: OpenAI Responses 的 output_text', () => {
+  const body = JSON.stringify({ output_text: 'Responses says ripe' })
+  assert.equal(pickText(body), 'Responses says ripe')
+})
+
+test('pickText: Cohere 的顶层 text', () => {
+  assert.equal(pickText(JSON.stringify({ text: 'Cohere says ripe' })), 'Cohere says ripe')
+})
+
+test('pickText: OpenAI 兼容优先于其他形状', () => {
+  const body = JSON.stringify({
+    choices: [{ message: { content: 'from choices' } }],
+    text: 'from text',
+  })
+  assert.equal(pickText(body), 'from choices')
+})
+
+test('pickText: 空 content 数组仍返回 null', () => {
+  assert.equal(pickText(JSON.stringify({ content: [] })), null)
+})
+
+test('pickText: 错误响应体仍返回 null', () => {
+  assert.equal(pickText(JSON.stringify({ error: { message: 'rate limited' } })), null)
+})

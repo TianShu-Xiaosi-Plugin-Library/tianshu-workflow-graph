@@ -88,7 +88,7 @@ description: 用 TWG 把视频/内容生产流程写成可执行、可查证的�
 **多段拼接**：N 个 `ffmpeg.color`/`testsrc` → `ffmpeg.concat` → `verify.media`
 **带判断的流水线**：`ffmpeg.color` → `agent.llm`（判断风格）→ `memory.set`（存结论）+ `ffmpeg.concat`（合成）
 **拉数据存证**：`service.http` → 落盘 + 入账本
-**AI 文案上屏**：`service.http`（调模型）→ `ffmpeg.drawtext`（第二输入）+ `ffmpeg.color`（第一输入）→ 自动把模型返回的正文画上去（OpenAI 兼容响应的 `choices[0].message.content` 会被自动取出）
+**AI 文案上屏**：`service.http`（调模型）→ `ffmpeg.drawtext`（第二输入）+ `ffmpeg.color`（第一输入）→ 自动把模型返回的正文画上去。支持的结构：OpenAI 兼容（`choices[0].message.content`，DeepSeek / Moonshot / 智谱等）、Anthropic（`content[].text`）、Gemini（`candidates[0].content.parts[].text`）、Ollama（`message.content`）、OpenAI Responses（`output_text`）、Cohere（`text`）；都取不到就报错，不会把整串 JSON 画上去
 
 ## 怎么跑
 
