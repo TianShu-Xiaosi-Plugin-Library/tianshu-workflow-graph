@@ -51,7 +51,7 @@ description: 用 TWG 把视频/内容生产流程写成可执行、可查证的�
 | `ffmpeg.input` | compute | 无 | `path`（**必须在基准目录内**，基准由 `root` 决定）`start` `duration` | deterministic |
 | `ffmpeg.color` | compute | 无 | `duration` `size` `rate` `color` | deterministic |
 | `ffmpeg.concat` | render | 1+ 个视频 | 无（按 inputs 顺序拼接） | deterministic |
-| `ffmpeg.drawtext` | render | 1 个视频（可选再给 1 个文本来源） | `text` `size` `x` `y` `maxChars` | deterministic |
+| `ffmpeg.drawtext` | render | 1 个视频（可选再给 1 个文本来源） | `text` `size` `x` `y` `maxChars` `fontfile` | deterministic |
 | `verify.media` | verify | 1 个文件 | `minDuration` `maxDuration` `minSize` `maxSize` | deterministic |
 | `agent.llm` | agent | 0+（路径会拼进 prompt） | `prompt` `maxChars` | **stochastic** |
 | `human.approve` | human | 0+ | `message` | deterministic |
@@ -59,7 +59,7 @@ description: 用 TWG 把视频/内容生产流程写成可执行、可查证的�
 | `memory.get` | memory | 无 | `key` `defaultValue` `valueType` | **stochastic** |
 | `memory.set` | memory | 0+（有输入则存其内容） | `key` `valueType` | deterministic |
 
-## 四个必须记住的约束
+## 五个必须记住的约束
 
 **1. `agent.llm` 不是永远可用**
 
@@ -76,6 +76,10 @@ description: 用 TWG 把视频/内容生产流程写成可执行、可查证的�
 **4. 密钥用 `${env:NAME}`，不要写进图**
 
 `service.http` 的 `url`、`headers`、`body` 里可以写 `${env:NAME}`，执行时从进程环境变量展开，账本记的是占位符本身（密钥不落库）。变量没设会直接报错并点名，不会静默变成空串。直接写明文也能跑——但它会原样进证据账本的 params。
+
+**5. 中文文本要指定 `fontfile`，否则自动选系统字体**
+
+`drawtext` 的默认字体不含中文字形。文本里出现中文时，会自动在平台常见路径里找一款中文字体（Windows 用 `msyh.ttc` / `simhei.ttf`，macOS 用 `PingFang.ttc`）。想固定字体就传 `params.fontfile`（路径不存在会直接报错，不会静默回退）。两边都找不到时会报「文本含中文但本机找不到中文字体」，而不是静默画出一片方块。
 
 ## 常见组合
 

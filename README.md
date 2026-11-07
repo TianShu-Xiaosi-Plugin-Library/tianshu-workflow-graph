@@ -155,7 +155,7 @@ twg_run { graph: "twg/templates/title-card.twg.json" }
 |---|---|---|---|
 | compute | `ffmpeg.testsrc` / `ffmpeg.color` | deterministic | 生成测试/纯色素材 |
 | compute | `ffmpeg.input` | deterministic | **读基准目录内的素材文件**（`path` 的基准由 `root` 决定） |
-| render | `ffmpeg.concat` / `ffmpeg.drawtext` | deterministic | 拼接、加字（`drawtext` 可接第二个输入当作文本来源，自动取 OpenAI 兼容响应的正文） |
+| render | `ffmpeg.concat` / `ffmpeg.drawtext` | deterministic | 拼接、加字（`drawtext` 可接第二个输入当作文本来源，自动取 OpenAI 兼容响应的正文；中文自动选系统字体，可用 `fontfile` 固定） |
 | verify | `verify.media` | deterministic | 大小/时长门禁，不达标**中断整图** |
 | agent | `agent.llm` | **stochastic** | 调模型判断（依赖宿主注入 `sidePathLLM`） |
 | human | `human.approve` | deterministic | 人工审批（插件内**未开放**，见边界） |
