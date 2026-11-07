@@ -24,6 +24,10 @@
       {
         "name": "twg_runs",
         "description": "查询证据账本：列最近运行，或按 runId 取某次运行的完整节点记录"
+      },
+      {
+        "name": "twg_help",
+        "description": "返回 TWG 的完整用法：何时用、op 清单、三个必记约束、常见组合"
       }
     ],
     "lifecycle": [],

@@ -186,6 +186,23 @@ export default defineTianshuPlugin({
             return { content: JSON.stringify({ count: rows.length, runs: rows }, null, 1) }
           },
         },
+        {
+          name: 'twg_help',
+          description: '返回 TWG 的完整用法：何时用、op 清单、图怎么写、三个必记约束、常见组合。不确定怎么用 TWG 时先调它。',
+          inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+          concurrencySafe: true,
+          async execute() {
+            // 宿主当前不加载插件的 contributes.skills，所以把用法做成可调用工具。
+            // 内容仍以 skills/tianshu-workflow-graph/SKILL.md 为唯一来源。
+            const p = join(HERE, 'skills', 'tianshu-workflow-graph', 'SKILL.md')
+            try {
+              return { content: readFileSync(p, 'utf8') }
+            } catch (err) {
+              return { isError: true, content: `读取用法文档失败: ${p}
+${err.message}` }
+            }
+          },
+        },
       ],
     }
   },
