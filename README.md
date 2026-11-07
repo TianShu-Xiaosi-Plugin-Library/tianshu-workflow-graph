@@ -69,7 +69,7 @@ graph TB
 
 | 工具 | 作用 |
 |---|---|
-| `twg_help` | **不确定怎么用时先调它**——返回完整用法（何时用、op 清单、三个必记约束、常见组合） |
+| `twg_help` | **不确定怎么用时先调它**——返回完整用法（何时用、op 清单、必记约束、常见组合） |
 | `twg_validate` | 只校验图结构，不执行 |
 | `twg_run` | 执行图，返回产物路径、各节点耗时、确定性、runId |
 | `twg_runs` | 查证据账本：列最近运行，或按 runId 取完整节点记录 |
@@ -82,47 +82,50 @@ graph TB
 - **FFmpeg**（TWG 不打包二进制，需自备）
   - 设 `TWG_FFMPEG` 指向 `ffmpeg.exe`，或把 `bin` 加进 PATH，或放到 `D:/Tools/ffmpeg/bin/`
   - Windows 下载：<https://www.gyan.dev/ffmpeg/builds/>（essentials build 即可）
+  - 找不到时**不会静默回退**，会在第一个 ffmpeg 节点报错并给出三条解决路径
 
 ### 安装
 
-把本仓库复制到天枢的用户插件目录，重启天枢：
+把本仓库复制到天枢的插件目录，目录名用插件 id `twg`：
 
 ```
-<TianshuData>/.rivet/plugins/tianshu-workflow-graph/
+<TianshuData>/.rivet/plugins/twg/
 ```
 
-> 实际目录由宿主的 `RIVET_HOME` 决定，也可能是 `%LOCALAPPDATA%\.rivet\plugins\`。装好后重启，工具列表里应出现上表 4 个工具。
+> 实际根目录由宿主决定，也可能是 `%LOCALAPPDATA%\.rivet\plugins\`。装好后**重启天枢**，工具列表里应出现上表 4 个工具。
 
 ### 跑第一张图
 
 ```
-twg_run { graph: "twg/templates/title-card.twg.json" }
+twg_run { graph: "twg/examples/hello.twg.json" }
 ```
 
-实测返回（宿主进程内，运行时 v24.22.1）：
+实测返回（宿主进程内，Node v24.22.1）：
 
 ```json
 {
-  "ok": true, "runId": "run-mw64iknr-nnzh", "totalMs": 302.9,
-  "order": ["intro","solid","title","final"],
-  "timings": [{ "id":"intro","op":"ffmpeg.testsrc","ms":90.3,"determinism":"deterministic" }, ...],
-  "outputs": { "main": "...\\final.mp4" },
+  "ok": true, "runId": "run-mw66le6w-z2av", "totalMs": 247.5,
+  "order": ["intro", "solid", "title", "final"],
+  "outputs": { "main": "...\\runs\\hello\\final.mp4" },
   "determinism": { "overall": "deterministic", "perOutput": { "main": "deterministic" } },
   "ledger": "written"
 }
 ```
 
-**图文件必须在工作区内**——宿主的路径守卫会拒绝工作区外的路径（实测报 `Path rejected`）。
+产物经 `ffprobe` 独立核验：h264 / 320×240 / 30 帧 / 3.000s，与图里 2s + 1s 拼接吻合。
+
+**图文件必须在工作区内**——宿主的路径守卫会拒绝工作区外的路径。
 
 ## 模板：不用写 JSON 也能开始
 
-`templates/` 下三个开箱能跑的图，**只改 `params`，不动结构**：
+`templates/` 下四个开箱能跑的图，**只改 `params`，不动结构**：
 
-| 模板 | 做什么 | 实测产物 |
-|---|---|---|
-| `title-card.twg.json` | 纯色背景 + 一行大字 | 3.0s / 6380 B |
-| `subtitle-burn.twg.json` | 烧字幕到画面 | 5.0s / 8968 B |
-| `concat-clips.twg.json` | 三段拼成一条 | 6.0s / 11359 B |
+| 模板 | 做什么 |
+|---|---|
+| `title-card.twg.json` | 纯色背景 + 一行大字 |
+| `subtitle-burn.twg.json` | 烧字幕到画面 |
+| `concat-clips.twg.json` | 三段拼成一条 |
+| `from-file.twg.json` | 读工作区内素材再加工（演示 `root` 语义） |
 
 改法见 [`templates/README.md`](templates/README.md)。
 
@@ -149,18 +152,71 @@ twg_run { graph: "twg/templates/title-card.twg.json" }
 - `outputs` 是产物的命名出口
 - 图是纯文本，可 diff、可 review、可进 git
 
-## 七类节点
+## 节点类型（11 个 op）
 
 | 类型 | op | 确定性 | 说明 |
 |---|---|---|---|
-| compute | `ffmpeg.testsrc` / `ffmpeg.color` | deterministic | 生成测试/纯色素材 |
-| compute | `ffmpeg.input` | deterministic | **读基准目录内的素材文件**（`path` 的基准由 `root` 决定） |
-| render | `ffmpeg.concat` / `ffmpeg.drawtext` | deterministic | 拼接、加字（`drawtext` 可接第二个输入当作文本来源，自动取 OpenAI 兼容 / Anthropic / Gemini / Ollama / Responses / Cohere 响应的正文；中文自动选系统字体，可用 `fontfile` 固定） |
+| compute | `ffmpeg.testsrc` / `ffmpeg.color` | deterministic | 生成测试图案 / 纯色素材 |
+| compute | `ffmpeg.input` | deterministic | 读基准目录内的素材（`path` 基准由 `root` 决定；`start`/`duration` 做时间裁剪；带符号链接守卫） |
+| render | `ffmpeg.concat` | deterministic | 按 inputs 顺序拼接（`-c copy`） |
+| render | `ffmpeg.drawtext` | deterministic | 加字。**支持第二个输入作为文本来源**，详见下节 |
 | verify | `verify.media` | deterministic | 大小/时长门禁，不达标**中断整图** |
-| agent | `agent.llm` | **stochastic** | 调模型判断（依赖宿主注入 `sidePathLLM`） |
+| agent | `agent.llm` | **stochastic** | 调模型判断（依赖宿主注入 `sidePathLLM`，见验证状态） |
 | human | `human.approve` | deterministic | 人工审批（插件内**未开放**，见边界） |
-| service | `service.http` | **stochastic** | 第三方 HTTP（仅 http/https，有超时与响应上限；`url`/`headers`/`body` 支持 `${env:NAME}` 取密钥，账本只记占位符） |
-| memory | `memory.get` / `memory.set` | **stochastic** / deterministic | 跨运行状态，支持 `text` / `base64` |
+| service | `service.http` | **stochastic** | 任意 HTTP(S)，有超时与响应上限；密钥可走环境变量 |
+| memory | `memory.get` | **stochastic** | 跨运行读取（读外部状态，按不确定处理） |
+| memory | `memory.set` | deterministic | 跨运行写入（只写不读，不影响下游确定性） |
+
+## 密钥不写进图
+
+`service.http` 的 `url`、`headers`、`body` 支持 `${env:NAME}` 占位符，执行时从进程环境变量展开：
+
+```json
+{ "id": "llm", "type": "service", "op": "service.http",
+  "params": {
+    "url": "https://api.deepseek.com/chat/completions",
+    "method": "POST",
+    "headers": { "Authorization": "Bearer ${env:DEEPSEEK_API_KEY}" },
+    "body": "{...}",
+    "timeoutMs": 30000 } }
+```
+
+- 变量没设会**直接报错并点名**（`[llm] 环境变量 DEEPSEEK_API_KEY 未设置`），不会静默变成空串
+- **账本记的是占位符本身**。实测 `twg_runs` 查回的 `params_json` 为 `"Authorization":"Bearer ${env:DEEPSEEK_API_KEY}"`，密钥不落库
+- 解析不改动 `node.params`，报错信息也用未展开的模板
+
+直接写明文密钥也能跑——但它会原样进证据账本的 params。**别这么干。**
+
+## AI 文案直接上屏
+
+`ffmpeg.drawtext` 可以接第二个输入当文本来源，把上游产物里的正文画到画面上：
+
+```json
+{ "id": "cap", "type": "render", "op": "ffmpeg.drawtext",
+  "inputs": ["bg", "llm"],
+  "params": { "size": 40, "x": 80, "y": 330, "maxChars": 100 } }
+```
+
+`inputs` 顺序是 `[视频, 文本来源]`。文本来源支持：
+
+| 结构 | 厂商 |
+|---|---|
+| `choices[0].message.content` | OpenAI 兼容（DeepSeek / Moonshot / 智谱…） |
+| `message.content` | Ollama |
+| `content[].text`（拼接所有 `type:"text"` 块） | Anthropic |
+| `candidates[0].content.parts[].text` | Gemini |
+| `output_text` | OpenAI Responses API |
+| `text` | Cohere |
+
+探测按上表顺序进行，取第一个有内容的。**全部取不到就报错**，不会把整串 JSON 画到画面上。非文本块（`tool_use` / `image`）会被跳过。
+
+文本在拼进 ffmpeg filter 前会清洗：换行折叠成空格，单引号 / 冒号 / 反斜杠移除以避免破坏 `drawtext=text='...'` 语法，超长按 `maxChars`（默认 120）截断。
+
+### 中文
+
+文本含 CJK 字符时自动选系统字体（Windows 查 `msyh.ttc` / `simhei.ttf` / `simsun.ttc`，macOS 查 `PingFang.ttc`，Linux 查 Noto / 文泉驿）。想固定字体传 `params.fontfile`，路径不存在会直接报错。两边都找不到时报「文本含中文但本机找不到中文字体」，而不是静默画出一片方块。
+
+实测（宿主进程内）：`{"text":"葡萄成熟时","size":72}` → 五个汉字完整渲染，无方块。
 
 ## 确定性：四态
 
@@ -175,7 +231,7 @@ twg_run { graph: "twg/templates/title-card.twg.json" }
 
 最后一条是设计上的关键取舍：**「结果不确定」和「根本没跑完」不是一回事**。混在一起，账本的确定性列就会说谎。
 
-实测（同一张图，两条路径）：
+实测（同一张图里两条路径）：
 
 ```json
 {
@@ -203,6 +259,8 @@ run: {"status":"failed","determinism":null,"error":"[gate] 时长过短: 1.7 < 2
   gen1..final  ok=1
   gate         ok=0  | [gate] 时长过短: 1.7 < 2
 ```
+
+连**图校验阶段被拒**的运行也会落库——这类失败没有节点执行，但 `runs.error` 会记下原因。
 
 ### 写入纪律
 
@@ -237,6 +295,8 @@ run: {"status":"failed","determinism":null,"error":"[gate] 时长过短: 1.7 < 2
 | 不做 NLE 时间线 | DAG 与时间线是两种数据结构 |
 | 不做云端账号 / 社区 | 用 git 分发工作流即可 |
 | 不做节点级人工审批 | TPI 1.0 只有工具级 `requiresApproval` |
+| **不做音频生成** | 没有音频节点；素材自带音轨能被 `ffmpeg.input` 保留，但插件造不出音乐 |
+| **不做转场 / 动画 / 缩放 / 变速** | 没有对应滤镜节点，`drawtext` 只支持静态文字 |
 
 `human.approve` 在插件里会明确报错——**不是 bug，是能力边界**。伪造自动批准会让确定性等级说谎。
 
@@ -244,15 +304,17 @@ run: {"status":"failed","determinism":null,"error":"[gate] 时长过短: 1.7 < 2
 
 `skills/tianshu-workflow-graph/SKILL.md` 存在，manifest 里也声明了 `contributes.skills`，但**当前宿主（4.0.4）不加载插件的 skill**。
 
-实测依据：连宿主内置插件 `trace-lab` 的 skill 也无法通过 `skill` 工具找到，可用 skill 列表只有 `galaxy` / `skill-creator` / `skill-management`（均为宿主自带）。
+实测依据：连宿主内置插件 `trace-lab` 的 skill 也无法通过 `skill` 工具找到，可用 skill 列表只有宿主自带的几个。
 
 因此用法改由 **`twg_help` 工具**提供——内容仍以该 SKILL.md 为唯一数据源。若将来宿主支持插件 skill，这份文件可直接生效。
 
 ## 开发
 
 ```bash
-node --test test/*.test.mjs       # 55 项
+node --test test/*.test.mjs       # 100 项
 ```
+
+> 注意：`node --test test/` 在 Node 24 下会报 `Cannot find module`，必须用显式文件列表。
 
 | 文件 | 职责 |
 |---|---|
@@ -260,7 +322,7 @@ node --test test/*.test.mjs       # 55 项
 | `tianshu.plugin.json` | TPI 1.0 清单 |
 | `lib/graph.mjs` | 图校验 + Kahn 拓扑排序 + 环检测 |
 | `lib/executor.mjs` | 执行器、ffmpeg 解析、确定性汇总、账本写入 |
-| `lib/nodes.mjs` | 10 个 op 的实现 |
+| `lib/nodes.mjs` | **11 个 op** 的实现 + 文本提取 / 清洗 / 环境变量 / 字体选择 |
 | `lib/determinism.mjs` | 等级合成与路径传播 |
 | `lib/ledger.mjs` | SQLite 账本（runs / node_runs / memory）+ schema 迁移 |
 | `lib/services.mjs` | 服务注入，内核不绑定宿主 |
@@ -272,15 +334,19 @@ node --test test/*.test.mjs       # 55 项
 
 | 项 | 状态 |
 |---|---|
-| 单元测试 | **55 项**，本机 Node v24.22.2 与宿主运行时 v24.22.1 **均全过** |
+| 单元测试 | **100 项全过**（本机 Node v24.22.2） |
 | 宿主进程内执行 | **已验证**：`twg_run` 返回 `ledger: "written"`，产物落盘 |
 | 宿主路径守卫 | **已验证**：工作区外路径被拒 |
 | 失败入账 | **已验证**：`status=failed` + `determinism=null` + 节点级 error |
 | 并发写 memory | **已验证**：10 进程全成功，last-write-wins |
-| 三个模板 | **已验证**：产物时长与字节均符合预期 |
+| 真实模型调用 | **已验证**：宿主内 `service.http` 调 DeepSeek 成功（1005 ms / 1219 ms 两次），密钥不落账本 |
+| AI 文案上屏 | **已验证**：DeepSeek 返回正文直接画进画面，抽帧目视确认 |
+| 中文字幕 | **已验证**：宿主内渲染 `葡萄成熟时`，字形完整 |
+| 环境变量占位符 | **已验证**：宿主内展开成功；缺变量时报错并点名 |
 | 插件 skill 加载 | **不可用**：宿主不加载（见上节） |
-| 真实模型调用 | **未验证**：宿主未给本会话装配 `sidePathLLM` |
+| `agent.llm` 节点 | **不可用**：宿主未注入 `sidePathLLM`（用 `service.http` 替代） |
 | 节点级人工审批 | **未实现**：宿主无此通道 |
+| 多厂商响应结构 | **部分验证**：Anthropic 结构做了端到端；Gemini / Ollama / Responses / Cohere 只有单元测试 |
 
 ## 文档
 
