@@ -1,0 +1,27 @@
+{
+  "version": "0.1",
+  "id": "subtitle-burn",
+  "nodes": [
+    {
+      "id": "src",
+      "type": "compute",
+      "op": "ffmpeg.color",
+      "params": { "duration": 5, "size": "1280x720", "rate": 25, "color": "black" }
+    },
+    {
+      "id": "sub",
+      "type": "render",
+      "op": "ffmpeg.drawtext",
+      "inputs": ["src"],
+      "params": { "text": "改我：这一行字幕", "size": 36, "x": 80, "y": 620 }
+    },
+    {
+      "id": "gate",
+      "type": "verify",
+      "op": "verify.media",
+      "inputs": ["sub"],
+      "params": { "minDuration": 4.5, "minSize": 1000 }
+    }
+  ],
+  "outputs": { "main": "gate" }
+}

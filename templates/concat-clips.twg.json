@@ -1,0 +1,38 @@
+{
+  "version": "0.1",
+  "id": "concat-clips",
+  "nodes": [
+    {
+      "id": "clip1",
+      "type": "compute",
+      "op": "ffmpeg.color",
+      "params": { "duration": 2, "size": "1280x720", "rate": 25, "color": "teal" }
+    },
+    {
+      "id": "clip2",
+      "type": "compute",
+      "op": "ffmpeg.color",
+      "params": { "duration": 2, "size": "1280x720", "rate": 25, "color": "navy" }
+    },
+    {
+      "id": "clip3",
+      "type": "compute",
+      "op": "ffmpeg.color",
+      "params": { "duration": 2, "size": "1280x720", "rate": 25, "color": "purple" }
+    },
+    {
+      "id": "final",
+      "type": "render",
+      "op": "ffmpeg.concat",
+      "inputs": ["clip1", "clip2", "clip3"]
+    },
+    {
+      "id": "gate",
+      "type": "verify",
+      "op": "verify.media",
+      "inputs": ["final"],
+      "params": { "minDuration": 5.5, "minSize": 1000 }
+    }
+  ],
+  "outputs": { "main": "gate" }
+}

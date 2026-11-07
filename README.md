@@ -121,6 +121,22 @@ node run.mjs examples/hello.twg.json
 - `outputs` 是产物的命名出口
 - 图是纯文本，可 diff、可 review、可进 git
 
+## 模板：不用写 JSON 也能开始
+
+`templates/` 下有三个开箱能跑的图，**只改 `params`，不动结构**：
+
+| 模板 | 做什么 |
+|---|---|
+| `title-card.twg.json` | 纯色背景 + 一行大字 |
+| `subtitle-burn.twg.json` | 烧字幕到画面 |
+| `concat-clips.twg.json` | 三段拼成一条 |
+
+```
+twg_run { graph: "twg/templates/title-card.twg.json" }
+```
+
+改法见 [`templates/README.md`](templates/README.md)。
+
 ## 七类节点
 
 | 类型 | op | 确定性 | 说明 |
@@ -239,6 +255,12 @@ node --test test/*.test.mjs       # 55 项
 | 并发写 memory | **已验证**：10 进程全成功，last-write-wins |
 | 真实模型调用 | **未验证**：宿主未装配 `sidePathLLM` |
 | 节点级人工审批 | **未实现**：宿主无此通道 |
+
+## 给 agent 用的 skill
+
+`skills/twg/SKILL.md` 随插件分发（`contributes.skills`）。它告诉天枢：什么时候该用 TWG、op 怎么选、常见组合、三个必须记住的约束（`agent` 依赖宿主通道、`memory.set` 不产出文件、`verify` 失败会中断整图）。
+
+有了它，用户不用记工具名——说需求就行。
 
 ## 文档
 

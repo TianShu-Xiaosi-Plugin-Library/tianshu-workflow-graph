@@ -1,0 +1,27 @@
+{
+  "version": "0.1",
+  "id": "title-card",
+  "nodes": [
+    {
+      "id": "bg",
+      "type": "compute",
+      "op": "ffmpeg.color",
+      "params": { "duration": 3, "size": "1280x720", "rate": 25, "color": "black" }
+    },
+    {
+      "id": "text",
+      "type": "render",
+      "op": "ffmpeg.drawtext",
+      "inputs": ["bg"],
+      "params": { "text": "改我：标题", "size": 72, "x": 120, "y": 300 }
+    },
+    {
+      "id": "gate",
+      "type": "verify",
+      "op": "verify.media",
+      "inputs": ["text"],
+      "params": { "minDuration": 2.5, "minSize": 1000 }
+    }
+  ],
+  "outputs": { "main": "gate" }
+}

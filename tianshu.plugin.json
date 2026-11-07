@@ -1,0 +1,42 @@
+{
+  "$tpi": "1.0",
+  "kind": "tianshu.plugin",
+  "id": "twg",
+  "displayName": "TWG 工作流图",
+  "version": "0.1.0",
+  "description": "类型化 DAG 工作流引擎：跑图、调外部程序、产物落盘",
+  "runtime": "agent",
+  "entry": "index.mjs",
+  "capabilities": [
+    "tools",
+    "storage"
+  ],
+  "contributes": {
+    "tools": [
+      {
+        "name": "twg_run",
+        "description": "执行一张 TWG 图，返回产物路径与各节点耗时"
+      },
+      {
+        "name": "twg_validate",
+        "description": "只校验图结构（不执行）"
+      },
+      {
+        "name": "twg_runs",
+        "description": "查询证据账本：列最近运行，或按 runId 取某次运行的完整节点记录"
+      }
+    ],
+    "lifecycle": [],
+    "skills": [
+      "skills/twg"
+    ]
+  },
+  "permissions": {
+    "fs": true,
+    "net": true,
+    "shell": true
+  },
+  "engines": {
+    "tianshu": ">=4.0.2 <5.0.0"
+  }
+}
