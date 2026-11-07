@@ -1,0 +1,42 @@
+{
+  "version": "0.1",
+  "id": "from-file",
+  "nodes": [
+    {
+      "id": "src",
+      "type": "compute",
+      "op": "ffmpeg.input",
+      "params": {
+        "path": ".twg-run/hello/final.mp4"
+      }
+    },
+    {
+      "id": "title",
+      "type": "render",
+      "op": "ffmpeg.drawtext",
+      "inputs": [
+        "src"
+      ],
+      "params": {
+        "text": "FROM FILE",
+        "size": 36,
+        "x": 20,
+        "y": 20
+      }
+    },
+    {
+      "id": "gate",
+      "type": "verify",
+      "op": "verify.media",
+      "inputs": [
+        "title"
+      ],
+      "params": {
+        "minDuration": 2.5
+      }
+    }
+  ],
+  "outputs": {
+    "main": "gate"
+  }
+}

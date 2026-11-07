@@ -153,6 +153,7 @@ twg_run { graph: "twg/templates/title-card.twg.json" }
 | 类型 | op | 确定性 | 说明 |
 |---|---|---|---|
 | compute | `ffmpeg.testsrc` / `ffmpeg.color` | deterministic | 生成测试/纯色素材 |
+| compute | `ffmpeg.input` | deterministic | **读工作区内的素材文件**（`path` 相对工作区根） |
 | render | `ffmpeg.concat` / `ffmpeg.drawtext` | deterministic | 拼接、加字 |
 | verify | `verify.media` | deterministic | 大小/时长门禁，不达标**中断整图** |
 | agent | `agent.llm` | **stochastic** | 调模型判断（依赖宿主注入 `sidePathLLM`） |
@@ -235,7 +236,6 @@ run: {"status":"failed","determinism":null,"error":"[gate] 时长过短: 1.7 < 2
 | 不做 NLE 时间线 | DAG 与时间线是两种数据结构 |
 | 不做云端账号 / 社区 | 用 git 分发工作流即可 |
 | 不做节点级人工审批 | TPI 1.0 只有工具级 `requiresApproval` |
-| 不做本地素材读取 | 目前只有生成类 op，没有 `ffmpeg.input` 之类的读取 op——**已知能力缺口** |
 
 `human.approve` 在插件里会明确报错——**不是 bug，是能力边界**。伪造自动批准会让确定性等级说谎。
 

@@ -102,6 +102,7 @@ export default defineTianshuPlugin({
                 ffmpeg: args.ffmpeg,
                 ledger: getLedger(),
                 services: buildServices(),
+                cwd,
               })
             } catch (err) {
               return { isError: true, content: `执行失败: ${err.message}` }

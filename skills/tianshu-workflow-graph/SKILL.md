@@ -47,6 +47,7 @@ description: 用 TWG 把视频/内容生产流程写成可执行、可查证的�
 | op | type | 要什么输入 | 关键 params | 确定性 |
 |---|---|---|---|---|
 | `ffmpeg.testsrc` | compute | 无 | `duration` `size` `rate` | deterministic |
+| `ffmpeg.input` | compute | 无 | `path`（**必须在工作区内**）`start` `duration` | deterministic |
 | `ffmpeg.color` | compute | 无 | `duration` `size` `rate` `color` | deterministic |
 | `ffmpeg.concat` | render | 1+ 个视频 | 无（按 inputs 顺序拼接） | deterministic |
 | `ffmpeg.drawtext` | render | 1 个视频 | `text` `size` `x` `y` | deterministic |
@@ -73,6 +74,7 @@ description: 用 TWG 把视频/内容生产流程写成可执行、可查证的�
 
 ## 常见组合
 
+**用自己的素材**：`ffmpeg.input`（读工作区内文件）→ `ffmpeg.drawtext` → `verify.media`
 **片头**：`ffmpeg.color` → `ffmpeg.drawtext` → `verify.media`
 **多段拼接**：N 个 `ffmpeg.color`/`testsrc` → `ffmpeg.concat` → `verify.media`
 **带判断的流水线**：`ffmpeg.color` → `agent.llm`（判断风格）→ `memory.set`（存结论）+ `ffmpeg.concat`（合成）
