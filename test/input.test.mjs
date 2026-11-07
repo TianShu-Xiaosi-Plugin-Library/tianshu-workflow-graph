@@ -101,3 +101,40 @@ test('ffmpeg.input: 工作区内的普通文件不被符号链接检查误拦', 
     '守卫不应误拦工作区内的普通文件')
   rmSync(d, { recursive: true, force: true })
 })
+
+test('ffmpeg.input: start/duration 裁剪生效（需 ffmpeg）', async (t) => {
+  const { resolveFfmpeg } = await import('../lib/executor.mjs')
+  const { spawnSync } = await import('node:child_process')
+  let ff
+  try {
+    ff = resolveFfmpeg()
+  } catch {
+    t.skip('本机无 ffmpeg')
+    return
+  }
+  const d = work()
+  const src = join(d, 'src5s.mp4')
+  const gen = spawnSync(ff, ['-hide_banner', '-loglevel', 'error',
+    '-f', 'lavfi', '-i', 'color=c=teal:duration=5:size=160x120:rate=10',
+    '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-y', src],
+  { encoding: 'utf8', timeout: 60000, windowsHide: true })
+  if (gen.status !== 0) {
+    rmSync(d, { recursive: true, force: true })
+    t.skip(`生成素材失败: ${(gen.stderr || '').slice(0, 80)}`)
+    return
+  }
+
+  const out = OPS['ffmpeg.input'].run({
+    node: { id: 'cut', params: { path: 'src5s.mp4', start: 1, duration: 2 } },
+    inputs: [], workDir: d, cwd: d, ffmpeg: ff,
+  })
+
+  // 用 ffprobe 读数（与 ffmpeg 同目录）
+  const { resolveFfprobe } = await import('../lib/executor.mjs')
+  const probe = spawnSync(resolveFfprobe(undefined, ff),
+    ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', out.file],
+    { encoding: 'utf8', timeout: 30000, windowsHide: true })
+  const dur = Number.parseFloat((probe.stdout || '').trim())
+  assert.ok(Math.abs(dur - 2) < 0.2, `裁剪后时长应约 2 秒，实际 ${dur}`)
+  rmSync(d, { recursive: true, force: true })
+})

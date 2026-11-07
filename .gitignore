@@ -8,3 +8,4 @@ node_modules/
 # 临时
 *.log
 .DS_Store
+assets/
