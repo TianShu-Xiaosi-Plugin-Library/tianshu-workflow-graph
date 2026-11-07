@@ -51,7 +51,7 @@ description: 用 TWG 把视频/内容生产流程写成可执行、可查证的�
 | `ffmpeg.input` | compute | 无 | `path`（**必须在基准目录内**，基准由 `root` 决定）`start` `duration` | deterministic |
 | `ffmpeg.color` | compute | 无 | `duration` `size` `rate` `color` | deterministic |
 | `ffmpeg.concat` | render | 1+ 个视频 | 无（按 inputs 顺序拼接） | deterministic |
-| `ffmpeg.drawtext` | render | 1 个视频 | `text` `size` `x` `y` | deterministic |
+| `ffmpeg.drawtext` | render | 1 个视频（可选再给 1 个文本来源） | `text` `size` `x` `y` `maxChars` | deterministic |
 | `verify.media` | verify | 1 个文件 | `minDuration` `maxDuration` `minSize` `maxSize` | deterministic |
 | `agent.llm` | agent | 0+（路径会拼进 prompt） | `prompt` `maxChars` | **stochastic** |
 | `human.approve` | human | 0+ | `message` | deterministic |
@@ -83,7 +83,8 @@ description: 用 TWG 把视频/内容生产流程写成可执行、可查证的�
 **片头**：`ffmpeg.color` → `ffmpeg.drawtext` → `verify.media`
 **多段拼接**：N 个 `ffmpeg.color`/`testsrc` → `ffmpeg.concat` → `verify.media`
 **带判断的流水线**：`ffmpeg.color` → `agent.llm`（判断风格）→ `memory.set`（存结论）+ `ffmpeg.concat`（合成）
-**拉数据存证**：`service.http` → 落盘 + 入账本（响应内容不会自动上屏：没有“把上游内容填进 params”的节点，`drawtext` 的 `text` 只认静态值）
+**拉数据存证**：`service.http` → 落盘 + 入账本
+**AI 文案上屏**：`service.http`（调模型）→ `ffmpeg.drawtext`（第二输入）+ `ffmpeg.color`（第一输入）→ 自动把模型返回的正文画上去（OpenAI 兼容响应的 `choices[0].message.content` 会被自动取出）
 
 ## 怎么跑
 
