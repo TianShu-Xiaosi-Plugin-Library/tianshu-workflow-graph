@@ -1,0 +1,13 @@
+{
+  "version": "0.1",
+  "id": "agent-demo",
+  "nodes": [
+    { "id": "gen", "type": "compute", "op": "ffmpeg.color",
+      "params": { "duration": 1, "size": "320x240", "rate": 10, "color": "teal" } },
+    { "id": "judge", "type": "agent", "op": "agent.llm", "inputs": ["gen"],
+      "params": { "prompt": "用一句话描述这段素材的风格" } },
+    { "id": "gate", "type": "verify", "op": "verify.media", "inputs": ["gen"],
+      "params": { "minSize": 100, "maxSize": 1000000 } }
+  ],
+  "outputs": { "verdict": "judge", "checked": "gate" }
+}

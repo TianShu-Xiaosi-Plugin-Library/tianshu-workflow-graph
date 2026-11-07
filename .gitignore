@@ -1,0 +1,10 @@
+# 运行产物
+.twg-run/
+node_modules/
+*.db
+*.db-wal
+*.db-shm
+
+# 临时
+*.log
+.DS_Store

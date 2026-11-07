@@ -1,0 +1,13 @@
+{
+  "version": "0.1",
+  "id": "service-demo",
+  "nodes": [
+    { "id": "gen", "type": "compute", "op": "ffmpeg.color",
+      "params": { "duration": 0.5, "size": "160x120", "rate": 5, "color": "purple" } },
+    { "id": "probe", "type": "service", "op": "service.http",
+      "params": { "url": "https://example.com", "timeoutMs": 15000 } },
+    { "id": "check", "type": "verify", "op": "verify.media", "inputs": ["gen"],
+      "params": { "minSize": 10 } }
+  ],
+  "outputs": { "http": "probe", "media": "check" }
+}

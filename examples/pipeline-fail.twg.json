@@ -1,0 +1,91 @@
+{
+  "version": "0.1",
+  "id": "pipeline-fail",
+  "nodes": [
+    {
+      "id": "gen1",
+      "type": "compute",
+      "op": "ffmpeg.color",
+      "params": {
+        "duration": 1.5,
+        "size": "320x240",
+        "rate": 10,
+        "color": "teal"
+      }
+    },
+    {
+      "id": "gen2",
+      "type": "compute",
+      "op": "ffmpeg.color",
+      "params": {
+        "duration": 0.2,
+        "size": "320x240",
+        "rate": 10,
+        "color": "navy"
+      }
+    },
+    {
+      "id": "judge",
+      "type": "agent",
+      "op": "agent.llm",
+      "inputs": [
+        "gen1"
+      ],
+      "params": {
+        "prompt": "用一句话描述这段素材的色调与节奏"
+      }
+    },
+    {
+      "id": "remember",
+      "type": "memory",
+      "op": "memory.set",
+      "inputs": [
+        "judge"
+      ],
+      "params": {
+        "key": "last-review",
+        "valueType": "text"
+      }
+    },
+    {
+      "id": "title",
+      "type": "render",
+      "op": "ffmpeg.drawtext",
+      "inputs": [
+        "gen1"
+      ],
+      "params": {
+        "text": "TWG PIPELINE",
+        "size": 28,
+        "x": 12,
+        "y": 12
+      }
+    },
+    {
+      "id": "final",
+      "type": "render",
+      "op": "ffmpeg.concat",
+      "inputs": [
+        "title",
+        "gen2"
+      ]
+    },
+    {
+      "id": "gate",
+      "type": "verify",
+      "op": "verify.media",
+      "inputs": [
+        "final"
+      ],
+      "params": {
+        "minDuration": 2.0,
+        "maxDuration": 5.0,
+        "minSize": 1000
+      }
+    }
+  ],
+  "outputs": {
+    "video": "gate",
+    "review": "judge"
+  }
+}

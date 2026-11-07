@@ -1,0 +1,32 @@
+{
+  "version": "0.1",
+  "id": "hello",
+  "nodes": [
+    {
+      "id": "intro",
+      "type": "compute",
+      "op": "ffmpeg.testsrc",
+      "params": { "duration": 2, "size": "320x240", "rate": 10 }
+    },
+    {
+      "id": "solid",
+      "type": "compute",
+      "op": "ffmpeg.color",
+      "params": { "duration": 1, "size": "320x240", "rate": 10, "color": "navy" }
+    },
+    {
+      "id": "title",
+      "type": "render",
+      "op": "ffmpeg.drawtext",
+      "inputs": ["intro"],
+      "params": { "text": "TWG", "size": 40, "x": 10, "y": 10 }
+    },
+    {
+      "id": "final",
+      "type": "render",
+      "op": "ffmpeg.concat",
+      "inputs": ["title", "solid"]
+    }
+  ],
+  "outputs": { "main": "final" }
+}
