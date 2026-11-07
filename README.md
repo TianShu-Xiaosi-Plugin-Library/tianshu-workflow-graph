@@ -159,7 +159,7 @@ twg_run { graph: "twg/templates/title-card.twg.json" }
 | verify | `verify.media` | deterministic | 大小/时长门禁，不达标**中断整图** |
 | agent | `agent.llm` | **stochastic** | 调模型判断（依赖宿主注入 `sidePathLLM`） |
 | human | `human.approve` | deterministic | 人工审批（插件内**未开放**，见边界） |
-| service | `service.http` | **stochastic** | 第三方 HTTP（仅 http/https，有超时与响应上限） |
+| service | `service.http` | **stochastic** | 第三方 HTTP（仅 http/https，有超时与响应上限；`url`/`headers`/`body` 支持 `${env:NAME}` 取密钥，账本只记占位符） |
 | memory | `memory.get` / `memory.set` | **stochastic** / deterministic | 跨运行状态，支持 `text` / `base64` |
 
 ## 确定性：四态

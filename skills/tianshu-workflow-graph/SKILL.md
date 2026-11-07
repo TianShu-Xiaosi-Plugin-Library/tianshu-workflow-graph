@@ -55,11 +55,11 @@ description: 用 TWG 把视频/内容生产流程写成可执行、可查证的�
 | `verify.media` | verify | 1 个文件 | `minDuration` `maxDuration` `minSize` `maxSize` | deterministic |
 | `agent.llm` | agent | 0+（路径会拼进 prompt） | `prompt` `maxChars` | **stochastic** |
 | `human.approve` | human | 0+ | `message` | deterministic |
-| `service.http` | service | 0+（有输入则作为 body） | `url` `method` `headers` `timeoutMs` | **stochastic** |
+| `service.http` | service | 0+（有输入则作为 body） | `url` `method` `headers` `body` `timeoutMs`；三个文本字段支持 `${env:NAME}` | **stochastic** |
 | `memory.get` | memory | 无 | `key` `defaultValue` `valueType` | **stochastic** |
 | `memory.set` | memory | 0+（有输入则存其内容） | `key` `valueType` | deterministic |
 
-## 三个必须记住的约束
+## 四个必须记住的约束
 
 **1. `agent.llm` 不是永远可用**
 
@@ -73,13 +73,17 @@ description: 用 TWG 把视频/内容生产流程写成可执行、可查证的�
 
 这是设计目的。想在门禁失败后继续，就不要把它放在主路径上，或者把阈值放宽。
 
+**4. 密钥用 `${env:NAME}`，不要写进图**
+
+`service.http` 的 `url`、`headers`、`body` 里可以写 `${env:NAME}`，执行时从进程环境变量展开，账本记的是占位符本身（密钥不落库）。变量没设会直接报错并点名，不会静默变成空串。直接写明文也能跑——但它会原样进证据账本的 params。
+
 ## 常见组合
 
 **用自己的素材**：`ffmpeg.input`（读基准目录内文件）→ `ffmpeg.drawtext` → `verify.media`
 **片头**：`ffmpeg.color` → `ffmpeg.drawtext` → `verify.media`
 **多段拼接**：N 个 `ffmpeg.color`/`testsrc` → `ffmpeg.concat` → `verify.media`
 **带判断的流水线**：`ffmpeg.color` → `agent.llm`（判断风格）→ `memory.set`（存结论）+ `ffmpeg.concat`（合成）
-**拉数据再合成**：`service.http` → `ffmpeg.drawtext`（把返回内容画上去）
+**拉数据存证**：`service.http` → 落盘 + 入账本（响应内容不会自动上屏：没有“把上游内容填进 params”的节点，`drawtext` 的 `text` 只认静态值）
 
 ## 怎么跑
 
