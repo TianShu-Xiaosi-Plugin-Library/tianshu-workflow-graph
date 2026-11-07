@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, rmSync, writeFileSync, symlinkSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { OPS } from '../lib/nodes.mjs'
@@ -62,4 +62,42 @@ test('ffmpeg.input: determinism 标为 deterministic，类型为 compute', () =>
   assert.equal(OPS['ffmpeg.input'].determinism, 'deterministic')
   assert.equal(OPS['ffmpeg.input'].kind, 'compute')
   assert.equal(OPS['ffmpeg.input'].inputs, 0)
+})
+
+test('ffmpeg.input: 工作区内的符号链接指向外部时被拒', (t) => {
+  const d = work()
+  const outsideDir = work()
+  const outside = join(outsideDir, 'secret.mp4')
+  writeFileSync(outside, '')
+  const link = join(d, 'link.mp4')
+  try {
+    symlinkSync(outside, link, 'file')
+  } catch (e) {
+    rmSync(d, { recursive: true, force: true })
+    rmSync(outsideDir, { recursive: true, force: true })
+    t.skip(`无法创建符号链接（${e.code}）——Windows 需开发者模式或管理员`)
+    return
+  }
+  assert.throws(
+    () => run({ path: 'link.mp4' }, d, d),
+    /经符号链接指向工作区外/,
+  )
+  rmSync(d, { recursive: true, force: true })
+  rmSync(outsideDir, { recursive: true, force: true })
+})
+
+test('ffmpeg.input: 工作区内的普通文件不被符号链接检查误拦', () => {
+  const d = work()
+  writeFileSync(join(d, 'ok.mp4'), '')
+  let err
+  try {
+    run({ path: 'ok.mp4' }, d, d)
+  } catch (e) {
+    err = e
+  }
+  assert.ok(err, '空文件应让 ffmpeg 失败')
+  assert.doesNotMatch(String(err.message),
+    /工作区外|素材不存在|符号链接|无法解析/,
+    '守卫不应误拦工作区内的普通文件')
+  rmSync(d, { recursive: true, force: true })
 })
